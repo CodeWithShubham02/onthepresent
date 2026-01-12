@@ -47,7 +47,7 @@ Future<void> loginUser(
       print("companyid ----------------");
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => const SubHomeScreen()),
+        MaterialPageRoute(builder: (_) =>  SubHomeScreen(cid:uid)),
       );
     } else {
       Navigator.pushReplacement(

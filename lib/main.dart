@@ -2,6 +2,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get_navigation/src/root/get_material_app.dart';
 import 'package:onthepresent/login_screen.dart';
+import 'package:onthepresent/subadmin/view/sub_home_screen.dart';
 import 'package:onthepresent/superadmin/view/create_company.dart';
 import 'package:onthepresent/superadmin/view/super_home_screen.dart';
 
@@ -28,7 +29,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       ),
-      home: const LoginScreen(),
+      home:  SubHomeScreen(cid: "DZl9Y9MeqASWs3KP7aXwHSIM0OB2"),
     );
   }
 }
