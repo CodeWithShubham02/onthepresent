@@ -1,7 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get/get_core/src/get_main.dart';
+import 'package:onthepresent/login_screen.dart';
+import 'package:onthepresent/subadmin/view/all_branch_screen.dart';
 import 'package:onthepresent/subadmin/view/branch_screen.dart';
+import 'package:onthepresent/subadmin/view/shift_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import 'create_user_screen.dart';
 
 class SubHomeScreen extends StatefulWidget {
   final String cid;
@@ -12,12 +18,24 @@ class SubHomeScreen extends StatefulWidget {
 }
 
 class _SubHomeScreenState extends State<SubHomeScreen> {
+  Future<void> clearCid() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('cid'); // only removes uid
+  }
   @override
   Widget build(BuildContext context) {
+
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Sub Admin Dashboard"),
+        title: const Text("Dashboard"),
         centerTitle: true,
+        actions: [
+          IconButton(onPressed: (){
+            clearCid();
+            Get.to(()=>LoginScreen());
+            }, icon: Icon(Icons.logout))
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),
@@ -51,14 +69,14 @@ class _SubHomeScreenState extends State<SubHomeScreen> {
                     title: "Create Shift",
                     icon: Icons.schedule,
                     onTap: () {
-                      // Navigator.push(...)
+                      Get.to(()=>ShiftScreen(cid:"DZl9Y9MeqASWs3KP7aXwHSIM0OB2"));
                     },
                   ),
                   _dashboardBox(
                     title: "Create Employee",
                     icon: Icons.person_add,
                     onTap: () {
-                      // Navigator.push(...)
+                      Get.to(()=>CreateUserScreen(cid:"DZl9Y9MeqASWs3KP7aXwHSIM0OB2"));
                     },
                   ),
                   _dashboardBox(
@@ -70,6 +88,20 @@ class _SubHomeScreenState extends State<SubHomeScreen> {
                   ),
                   _dashboardBox(
                     title: "Daily Attendance",
+                    icon: Icons.fact_check,
+                    onTap: () {
+                      // Navigator.push(...)
+                    },
+                  ),
+                  _dashboardBox(
+                    title: "All Branch",
+                    icon: Icons.fact_check,
+                    onTap: () {
+                       Get.to(()=>AllBranchScreen(cid: widget.cid));
+                    },
+                  ),
+                  _dashboardBox(
+                    title: "Feedback",
                     icon: Icons.fact_check,
                     onTap: () {
                       // Navigator.push(...)
