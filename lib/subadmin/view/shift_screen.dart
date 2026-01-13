@@ -11,7 +11,8 @@ class ShiftScreen extends StatefulWidget {
 }
 
 class _ShiftScreenState extends State<ShiftScreen> {
-  final _shiftController = TextEditingController();
+  final _shiftStartController = TextEditingController();
+  final _shiftEndController = TextEditingController();
 
 
   @override
@@ -43,7 +44,12 @@ class _ShiftScreenState extends State<ShiftScreen> {
                 elevation:5,
                 child: ListTile(
                   leading: const Icon(Icons.schedule),
-                  title: Text(doc['shiftName']),
+                  title: Column(
+                    children: [
+                      Text("Start - "+doc['shiftStart']),
+                      Text("End - "+doc['shiftEnd']),
+                    ],
+                  ),
                 ),
               );
             }).toList(),
@@ -78,9 +84,15 @@ class _ShiftScreenState extends State<ShiftScreen> {
               const SizedBox(height: 10),
 
               TextField(
-                controller: _shiftController,
+                controller: _shiftStartController,
                 decoration: const InputDecoration(
-                  labelText: "Shift Time",
+                  labelText: "Shift Start Time",
+                ),
+              ),
+              TextField(
+                controller: _shiftEndController,
+                decoration: const InputDecoration(
+                  labelText: "Shift End Time",
                 ),
               ),
             ],
@@ -102,7 +114,7 @@ class _ShiftScreenState extends State<ShiftScreen> {
 
   /// 🔥 CREATE SHIFT
   void _createShift() async {
-    if (_shiftController.text.isEmpty) {
+    if (_shiftStartController.text.isEmpty || _shiftEndController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("All fields required")),
       );
@@ -111,10 +123,12 @@ class _ShiftScreenState extends State<ShiftScreen> {
 
     await ShiftController.createShift(
       cid: widget.cid,
-      shiftName: _shiftController.text.trim(),
+      shiftStart: _shiftStartController.text.trim(),
+      shiftEnd: _shiftEndController.text.trim(),
     );
 
-    _shiftController.clear();
+    _shiftStartController.clear();
+    _shiftEndController.clear();
     Navigator.pop(context);
 
     ScaffoldMessenger.of(context).showSnackBar(

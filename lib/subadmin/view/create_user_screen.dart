@@ -13,6 +13,7 @@ class CreateUserScreen extends StatefulWidget {
 class _CreateUserScreenState extends State<CreateUserScreen> {
 
   final phoneCtrl = TextEditingController();
+  final nameCtrl = TextEditingController();
   final emailCtrl = TextEditingController();
   final passwordCtrl = TextEditingController();
   final addressCtrl = TextEditingController();
@@ -24,12 +25,16 @@ class _CreateUserScreenState extends State<CreateUserScreen> {
 
   String? selectedBranchId;
   String? selectedBranchName;
+  String? selectedBranchRange;
   String? selectedLat;
   String? selectedLong;
 
   String? selectedShiftId;
-  String? selectedShiftName;
+  String? selectedShiftStart;
+  String? selectedShiftEnd;
 
+  String? selecteddepartId;
+  String? selectedDepartment;
   /// 📅 Date Picker
   Future<void> pickDate() async {
     final picked = await showDatePicker(
@@ -62,13 +67,16 @@ class _CreateUserScreenState extends State<CreateUserScreen> {
           .set({
         'uid': uid,
         'phone': phoneCtrl.text,
+        'name': nameCtrl.text,
         'email': emailCtrl.text,
         'gender': gender,
-        'department': department,
+        'department': selectedDepartment,
         'shiftId': selectedShiftId,
-        'shiftName': selectedShiftName,
+        'shiftStart': selectedShiftStart,
+        'shiftEnd': selectedShiftEnd,
         'branchId': selectedBranchId,
         'branchName': selectedBranchName,
+        'branchRange': selectedBranchRange,
         'latitude': selectedLat,
         'longitude': selectedLong,
         'address': addressCtrl.text,
@@ -102,6 +110,7 @@ class _CreateUserScreenState extends State<CreateUserScreen> {
           children: [
 
             _input(phoneCtrl, "Contact Number", TextInputType.phone),
+            _input(nameCtrl, "Enter Name", TextInputType.text),
             _input(emailCtrl, "Email", TextInputType.emailAddress),
             _input(passwordCtrl, "Password", TextInputType.text, true),
 
@@ -120,12 +129,7 @@ class _CreateUserScreenState extends State<CreateUserScreen> {
               onChanged: (v)=> setState(()=> gender=v),
             ),
 
-            _dropdownSimple(
-              label: "Department",
-              value: department,
-              items: ['Team Leader','Executive'],
-              onChanged: (v)=> setState(()=> department=v),
-            ),
+            departDropdown(),
             const SizedBox(height: 5),
             /// 🔥 Branch Dropdown
             branchDropdown(),
@@ -219,6 +223,7 @@ class _CreateUserScreenState extends State<CreateUserScreen> {
             setState(() {
               selectedBranchId = doc.id;
               selectedBranchName = doc['branchName'];
+              selectedBranchRange = doc['branchrange'];
               selectedLat = doc['latitude'].toString();
               selectedLong = doc['longitude'].toString();
             });
@@ -249,7 +254,7 @@ class _CreateUserScreenState extends State<CreateUserScreen> {
           items: snapshot.data!.docs.map((doc) {
             return DropdownMenuItem(
               value: doc.id,
-              child: Text(doc['shiftName']),
+              child: Text(doc['shiftStart']),
             );
           }).toList(),
           onChanged: (value) {
@@ -258,11 +263,65 @@ class _CreateUserScreenState extends State<CreateUserScreen> {
 
             setState(() {
               selectedShiftId = doc.id;
-              selectedShiftName = doc['shiftName'];
+              selectedShiftStart = doc['shiftStart'];
+              selectedShiftEnd = doc['shiftEnd'];
             });
           },
         );
       },
     );
   }
+  Widget departDropdown() {
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('subcompanies')
+          .doc(widget.cid)
+          .collection('departments')
+          .orderBy('createdAt', descending: false)
+          .snapshots(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const CircularProgressIndicator();
+        }
+
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          return const Text("No depart found");
+        }
+
+        return DropdownButtonFormField<String>(
+          value: selecteddepartId,
+          hint: const Text("Select Department"),
+          decoration: InputDecoration(
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            contentPadding:
+            const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+          ),
+          items: snapshot.data!.docs.map((doc) {
+            return DropdownMenuItem<String>(
+              value: doc.id,
+              child: Text(
+                "${doc['name']}",
+                style: const TextStyle(fontSize: 14),
+              ),
+            );
+          }).toList(),
+          onChanged: (value) {
+            if (value == null) return;
+
+            final doc = snapshot.data!.docs
+                .firstWhere((e) => e.id == value);
+
+            setState(() {
+              selecteddepartId = doc.id;
+              selectedDepartment = doc['name'];
+
+            });
+          },
+        );
+      },
+    );
+  }
+
 }

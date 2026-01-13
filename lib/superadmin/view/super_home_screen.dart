@@ -22,7 +22,7 @@ class _SuperHomeScreenState extends State<SuperHomeScreen> {
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: GridView.count(
-          crossAxisCount: 3,
+          crossAxisCount: 2,
           mainAxisSpacing: 10,
           crossAxisSpacing: 10,
           children: [

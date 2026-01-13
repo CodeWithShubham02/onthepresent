@@ -7,7 +7,8 @@ class ShiftController {
 
   static Future<void> createShift({
     required String cid,
-    required String shiftName,
+    required String shiftStart,
+    required String shiftEnd,
   }) async {
     final ref = _firestore
         .collection('subcompanies')
@@ -18,7 +19,8 @@ class ShiftController {
     final shift = ShiftModel(
       id: ref.id,
       cid: cid,
-      shiftName: shiftName,
+      shiftStart: shiftStart,
+      shiftEnd: shiftEnd,
       createdAt: DateTime.now(),
     );
 

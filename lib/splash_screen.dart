@@ -40,7 +40,7 @@ class _SplashScreenState extends State<SplashScreen> {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (_) => const EmployeeHomeScreen(),
+          builder: (_) =>  EmployeeHomeScreen(uid: eid,cid: cid ?? 'no id',),
         ),
       );
     } else {

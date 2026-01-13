@@ -15,6 +15,7 @@ class _BranchScreenState extends State<BranchScreen> {
 
   final TextEditingController cidController = TextEditingController();
   final TextEditingController branchController = TextEditingController();
+  final TextEditingController branchrangeController = TextEditingController();
   final TextEditingController latController = TextEditingController();
   final TextEditingController longController = TextEditingController();
 
@@ -41,6 +42,12 @@ class _BranchScreenState extends State<BranchScreen> {
               _input(branchController, "Branch Name", validator: (value) {
                 if (value == null || value.trim().isEmpty) {
                   return "Branch name is required";
+                }
+                return null;
+              }),
+              _input(branchrangeController, "Range meter", validator: (value) {
+                if (value == null || value.trim().isEmpty) {
+                  return "Branch range is required";
                 }
                 return null;
               }),
@@ -118,6 +125,7 @@ class _BranchScreenState extends State<BranchScreen> {
       await BranchController.createBranch(
         cid: widget.cid,
         branchName: branchController.text.trim(),
+        branchrange: branchrangeController.text.trim(),
         latitude: double.parse(latController.text.trim()),
         longitude: double.parse(longController.text.trim()),
       );

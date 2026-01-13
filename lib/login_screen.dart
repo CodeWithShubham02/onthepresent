@@ -124,10 +124,10 @@ class _LoginScreenState extends State<LoginScreen> {
                 // Login Button
                 ElevatedButton(
                   onPressed: () {
+                    if(emailController=="sg@gmail.com" && passwordController=="11111111"){
+                      Get.to(()=>SuperHomeScreen());
+                    }
                     if (_formKey.currentState!.validate()) {
-                      if(emailController=="sg@gmail.com" && passwordController=="11111111"){
-                        Get.to(()=>SuperHomeScreen());
-                      }
                       loginUser(
                         context,
                         emailController.text.trim(),

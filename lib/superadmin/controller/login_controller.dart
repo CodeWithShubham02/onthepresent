@@ -2,6 +2,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:get/get_core/src/get_main.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../employee/view/employee_home_screen.dart';
@@ -35,12 +37,7 @@ Future<void> loginUser(
 
       await saveSession(uid: uid, role: 'subAdmin', cid: uid);
 
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (_) => SubHomeScreen(cid: uid),
-        ),
-      );
+      Get.offAll(()=>SubHomeScreen(cid: uid));
       return;
     }
 
@@ -71,12 +68,8 @@ Future<void> loginUser(
           eid: FirebaseAuth.instance.currentUser!.uid,
         );
 
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (_) => const EmployeeHomeScreen(),
-          ),
-        );
+
+        Get.offAll(()=>EmployeeHomeScreen(uid:uid,cid: company.id,));
         return;
       }
     }

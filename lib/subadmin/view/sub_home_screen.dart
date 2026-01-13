@@ -3,7 +3,10 @@ import 'package:get/get.dart';
 import 'package:get/get_core/src/get_main.dart';
 import 'package:onthepresent/login_screen.dart';
 import 'package:onthepresent/subadmin/view/all_branch_screen.dart';
+import 'package:onthepresent/subadmin/view/all_employee_attendance_screen.dart';
+import 'package:onthepresent/subadmin/view/all_employee_list.dart';
 import 'package:onthepresent/subadmin/view/branch_screen.dart';
+import 'package:onthepresent/subadmin/view/create_department_screen.dart';
 import 'package:onthepresent/subadmin/view/shift_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -62,35 +65,35 @@ class _SubHomeScreenState extends State<SubHomeScreen> {
                     title: "Create Branch",
                     icon: Icons.account_tree,
                     onTap: () {
-                      Get.to(()=>BranchScreen(cid:"DZl9Y9MeqASWs3KP7aXwHSIM0OB2"));
+                      Get.to(()=>BranchScreen(cid:widget.cid));
                     },
                   ),
                   _dashboardBox(
                     title: "Create Shift",
                     icon: Icons.schedule,
                     onTap: () {
-                      Get.to(()=>ShiftScreen(cid:"DZl9Y9MeqASWs3KP7aXwHSIM0OB2"));
+                      Get.to(()=>ShiftScreen(cid:widget.cid));
                     },
                   ),
                   _dashboardBox(
                     title: "Create Employee",
                     icon: Icons.person_add,
                     onTap: () {
-                      Get.to(()=>CreateUserScreen(cid:"DZl9Y9MeqASWs3KP7aXwHSIM0OB2"));
+                      Get.to(()=>CreateUserScreen(cid:widget.cid));
                     },
                   ),
                   _dashboardBox(
                     title: "All Employees",
                     icon: Icons.people,
                     onTap: () {
-                      // Navigator.push(...)
+                      Get.to(()=>AllEmployeeList(cid:widget.cid));
                     },
                   ),
                   _dashboardBox(
                     title: "Daily Attendance",
                     icon: Icons.fact_check,
                     onTap: () {
-                      // Navigator.push(...)
+                      Get.to(()=>AllEmployeeAttendanceScreen(cid:widget.cid));
                     },
                   ),
                   _dashboardBox(
@@ -98,6 +101,13 @@ class _SubHomeScreenState extends State<SubHomeScreen> {
                     icon: Icons.fact_check,
                     onTap: () {
                        Get.to(()=>AllBranchScreen(cid: widget.cid));
+                    },
+                  ),
+                  _dashboardBox(
+                    title: "Create Depart..",
+                    icon: Icons.fact_check,
+                    onTap: () {
+                      Get.to(()=>CreateDepartmentScreen(cid: widget.cid));
                     },
                   ),
                   _dashboardBox(
