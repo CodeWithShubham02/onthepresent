@@ -1,11 +1,16 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class AttendanceScreen extends StatefulWidget {
   final String cid;
   final String uid;
 
-  const AttendanceScreen({super.key, required this.cid, required this.uid});
+  const AttendanceScreen({
+    super.key,
+    required this.cid,
+    required this.uid,
+  });
 
   @override
   State<AttendanceScreen> createState() => _AttendanceScreenState();
@@ -14,158 +19,187 @@ class AttendanceScreen extends StatefulWidget {
 class _AttendanceScreenState extends State<AttendanceScreen> {
   Map<String, dynamic>? attendanceData;
   bool isLoading = true;
+  DateTime selectedDate = DateTime.now();
 
   @override
   void initState() {
     super.initState();
-    fetchTodayAttendance();
+    fetchAttendanceByDate(selectedDate);
   }
 
-  String todayKey() {
-    final now = DateTime.now();
-    return "${now.year}-${now.month.toString().padLeft(2,'0')}-${now.day.toString().padLeft(2,'0')}";
+  // 🔹 Date Key (YYYY-MM-DD)
+  String dateKey(DateTime date) {
+    return "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
   }
 
-  Future<void> fetchTodayAttendance() async {
-    try {
-      final docRef = FirebaseFirestore.instance
-          .collection('subcompanies')
-          .doc(widget.cid)
-          .collection('attendance')
-          .doc(todayKey())
-          .collection('records')
-          .doc(widget.uid);
+  // 🔹 Fetch Attendance
+  Future<void> fetchAttendanceByDate(DateTime date) async {
+    setState(() => isLoading = true);
 
-      final doc = await docRef.get();
+    final doc = await FirebaseFirestore.instance
+        .collection('subcompanies')
+        .doc(widget.cid)
+        .collection('attendance')
+        .doc(dateKey(date))
+        .collection('records')
+        .doc(widget.uid)
+        .get();
 
-      setState(() {
-        attendanceData = doc.exists ? doc.data() : {};
-        isLoading = false;
-      });
-    } catch (e) {
-      setState(() => isLoading = false);
-      print(e.toString());
-    }
+    setState(() {
+      attendanceData = doc.exists ? doc.data() : {};
+      isLoading = false;
+    });
   }
 
+  // 🔹 Time Formatter
   String formatTime(Timestamp? ts) {
-    if (ts == null) return "Not yet";
-    final dt = ts.toDate();
-    return "${dt.hour.toString().padLeft(2,'0')}:${dt.minute.toString().padLeft(2,'0')}";
+    if (ts == null) return "-";
+    final d = ts.toDate();
+    return "${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}";
   }
 
-  String calculateWorkingHours(Timestamp? inTime, Timestamp? outTime) {
-    if (inTime == null || outTime == null) return "-";
-    final diff = outTime.toDate().difference(inTime.toDate());
-    final hours = diff.inHours;
-    final minutes = diff.inMinutes % 60;
-    return "${hours}h ${minutes}m";
+  // 🔹 Working Hours
+  String workingHours() {
+    if (attendanceData?['punchIn']?['time'] == null ||
+        attendanceData?['punchOut']?['time'] == null) return "-";
+
+    final inTime =
+    (attendanceData!['punchIn']['time'] as Timestamp).toDate();
+    final outTime =
+    (attendanceData!['punchOut']['time'] as Timestamp).toDate();
+
+    final diff = outTime.difference(inTime);
+    return "${diff.inHours}h ${diff.inMinutes % 60}m";
+  }
+
+  // 🔹 URL Link
+  Widget linkText(String? url) {
+    if (url == null || url.isEmpty) return const Text("-");
+    return InkWell(
+      onTap: () async {
+        final uri = Uri.parse(url);
+        if (await canLaunchUrl(uri)) {
+          launchUrl(uri, mode: LaunchMode.externalApplication);
+        }
+      },
+      child: const Text(
+        "View",
+        style: TextStyle(
+          color: Colors.blue,
+          decoration: TextDecoration.underline,
+        ),
+      ),
+    );
+  }
+
+  // 🔹 Table Row
+  DataRow row(String label, Widget value) {
+    return DataRow(cells: [
+      DataCell(Text(label,
+          style: const TextStyle(fontWeight: FontWeight.w600))),
+      DataCell(value),
+    ]);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Today's Attendance")),
+      appBar: AppBar(
+        title: Text(
+          "Attendance (${dateKey(selectedDate)})",
+          style: const TextStyle(fontSize: 16),
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.calendar_month),
+            onPressed: () async {
+              final pickedDate = await showDatePicker(
+                context: context,
+                initialDate: selectedDate,
+                firstDate: DateTime(2023),
+                lastDate: DateTime.now(),
+              );
+
+              if (pickedDate != null) {
+                selectedDate = pickedDate;
+                fetchAttendanceByDate(pickedDate);
+              }
+            },
+          ),
+        ],
+      ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
+          : attendanceData == null || attendanceData!.isEmpty
+          ? const Center(child: Text("No attendance found"))
           : SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(12),
           child: Container(
-            width: double.infinity,
             decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black12,
-                  blurRadius: 8,
-                  offset: Offset(0, 4),
-                )
-              ],
+              border: Border.all(color: Colors.grey.shade400),
+              borderRadius: BorderRadius.circular(8),
             ),
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  "Attendance Details",
-                  style: TextStyle(
-                      fontSize: 22, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 16),
+            child: DataTableTheme(
+              data: DataTableThemeData(
+                headingRowColor: MaterialStateProperty.all(
+                    Colors.grey.shade200),
+                dividerThickness: 1,
+              ),
+              child: DataTable(
+                columnSpacing: 40,
+                columns: const [
+                  DataColumn(label: Text("Field")),
+                  DataColumn(label: Text("Value")),
+                ],
+                rows: [
+                  row("Punch In",
+                      Text(formatTime(attendanceData?['punchIn']?['time']))),
 
-                // Punch In
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text("Punch In:", style: TextStyle(fontSize: 16)),
-                    Text(formatTime(attendanceData?['punchIn']?['time']),
-                        style: const TextStyle(fontSize: 16)),
-                  ],
-                ),
-                const SizedBox(height: 8),
+                  row("Punch Out",
+                      Text(formatTime(attendanceData?['punchOut']?['time']))),
 
-                // Punch Out
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text("Punch Out:", style: TextStyle(fontSize: 16)),
-                    Text(formatTime(attendanceData?['punchOut']?['time']),
-                        style: const TextStyle(fontSize: 16)),
-                  ],
-                ),
-                const SizedBox(height: 8),
+                  row("Punch In Remark",
+                      Text(attendanceData?['punchIn']?['remark']?.toString() ?? "-")),
 
-                // Shift Start & End
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text("Shift Start:", style: TextStyle(fontSize: 16)),
-                    Text(attendanceData?['shiftStart'] ?? '-',
-                        style: const TextStyle(fontSize: 16)),
-                  ],
-                ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text("Shift End:", style: TextStyle(fontSize: 16)),
-                    Text(attendanceData?['shiftEnd'] ?? '-',
-                        style: const TextStyle(fontSize: 16)),
-                  ],
-                ),
-                const SizedBox(height: 8),
+                  row("Punch Out Remark",
+                      Text(attendanceData?['punchOut']?['remark']?.toString() ?? "-")),
 
-                // Status
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text("Status:", style: TextStyle(fontSize: 16)),
-                    Text(attendanceData?['status'] ?? '-',
-                        style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: attendanceData?['status'] == 'Present'
-                                ? Colors.green
-                                : Colors.red)),
-                  ],
-                ),
-                const SizedBox(height: 8),
+                  row("Punch In Image",
+                      linkText(attendanceData?['punchIn']?['image'])),
 
-                // Working Duration
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text("Working Hours:", style: TextStyle(fontSize: 16)),
+                  row("Punch Out Image",
+                      linkText(attendanceData?['punchOut']?['image'])),
+
+                  row("Latitude",
+                      Text(attendanceData?['currentLat']?.toString() ?? "-")),
+
+                  row("Longitude",
+                      Text(attendanceData?['currentLng']?.toString() ?? "-")),
+
+                  row("Shift Start",
+                      Text(attendanceData?['shiftStart']?.toString() ?? "-")),
+
+                  row("Shift End",
+                      Text(attendanceData?['shiftEnd']?.toString() ?? "-")),
+
+                  row(
+                    "Status",
                     Text(
-                      calculateWorkingHours(
-                          attendanceData?['punchIn']?['time'],
-                          attendanceData?['punchOut']?['time']),
-                      style: const TextStyle(fontSize: 16),
+                      attendanceData?['status']?.toString() ?? "-",
+                      style: TextStyle(
+                        color: attendanceData?['status'] == 'Present'
+                            ? Colors.green
+                            : Colors.red,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                  ],
-                ),
-              ],
+                  ),
+
+                  row("Working Hours", Text(workingHours())),
+                ],
+              ),
             ),
           ),
         ),

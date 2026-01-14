@@ -100,6 +100,7 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
                           department:employeeData?['department'] ?? '-',
                           range:employeeData?['branchRange'] ?? '-',
                           name:employeeData?['name'] ?? '-',
+
                       ));
                     },
                   ),
