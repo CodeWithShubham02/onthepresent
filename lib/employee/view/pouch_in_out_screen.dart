@@ -326,7 +326,6 @@ class _PunchInOutScreenState extends State<PunchInOutScreen> {
   }
 
   Future<void> punchOut() async {
-
     if (currentDistance == null || currentDistance! > officeRange) {
       throw 'Punch out allowed only inside office';
     }
@@ -349,18 +348,26 @@ class _PunchInOutScreenState extends State<PunchInOutScreen> {
       throw 'Already punched out';
     }
 
-    // 🕒 Punch In Time
-    final Timestamp punchInTs = doc['punchIn']['time'];
-    final DateTime punchInTime = punchInTs.toDate();
+    // ⏰ Punch In / Out
+    final punchInTime =
+    (doc['punchIn']['time'] as Timestamp).toDate();
+    final punchOutTime = DateTime.now();
 
-    // 🕒 Punch Out Time
-    final DateTime punchOutTime = DateTime.now();
+    // 🟡 TOTAL BREAK TIME
+    final breaksSnap = await ref.collection('breaks').get();
+    int totalBreakMinutes = 0;
 
-    // ⏱ Duration
-    final Duration workingDuration =
-    punchOutTime.difference(punchInTime);
+    for (var b in breaksSnap.docs) {
+      totalBreakMinutes += (b['durationMinutes'] ?? 0) as int;
+    }
 
-    final String totalHours = formatDuration(workingDuration);
+    // ⏱ TOTAL WORK TIME
+    final totalMinutes =
+        punchOutTime.difference(punchInTime).inMinutes;
+
+    final netMinutes = totalMinutes - totalBreakMinutes;
+
+    final netDuration = Duration(minutes: netMinutes);
 
     await ref.update({
       'punchOut': {
@@ -369,11 +376,81 @@ class _PunchInOutScreenState extends State<PunchInOutScreen> {
         'lng': currentPosition!.longitude,
         'remark': remarkCtrl.text,
       },
-      'workingDurationMinutes': workingDuration.inMinutes,
-      'workingHours': totalHours, // 🔥 HH:mm
+      'totalBreakMinutes': totalBreakMinutes,
+      'workingMinutes': netMinutes,
+      'netWorkingHours': formatDuration(netDuration),
     });
+
     await stopLocationTracking();
   }
+
+  //-----------break time-----------------
+  bool onBreak = false;
+  DateTime? activeBreakStart;
+  Future<void> startBreak() async {
+    final ref = FirebaseFirestore.instance
+        .collection('subcompanies')
+        .doc(widget.cid)
+        .collection('attendance')
+        .doc(todayKey())
+        .collection('records')
+        .doc(widget.uid);
+
+    final doc = await ref.get();
+
+    if (!doc.exists || doc.data()?['punchIn'] == null) {
+      throw 'Punch In required first';
+    }
+
+    if (onBreak) {
+      throw 'Already on break';
+    }
+
+    activeBreakStart = DateTime.now();
+    onBreak = true;
+
+    await ref.collection('breaks').add({
+      'startTime': FieldValue.serverTimestamp(),
+      'endTime': null,
+      'durationMinutes': 0,
+    });
+  }
+  Future<void> endBreak() async {
+    if (!onBreak || activeBreakStart == null) {
+      throw 'No active break';
+    }
+
+    final ref = FirebaseFirestore.instance
+        .collection('subcompanies')
+        .doc(widget.cid)
+        .collection('attendance')
+        .doc(todayKey())
+        .collection('records')
+        .doc(widget.uid);
+
+    final snap = await ref
+        .collection('breaks')
+        .where('endTime', isNull: true)
+        .limit(1)
+        .get();
+
+    if (snap.docs.isEmpty) {
+      throw 'Active break not found';
+    }
+
+    final breakEnd = DateTime.now();
+    final duration =
+        breakEnd.difference(activeBreakStart!).inMinutes;
+
+    await snap.docs.first.reference.update({
+      'endTime': FieldValue.serverTimestamp(),
+      'durationMinutes': duration,
+    });
+
+    activeBreakStart = null;
+    onBreak = false;
+  }
+
 
   // ---------------- UI ----------------
   @override
@@ -450,40 +527,73 @@ class _PunchInOutScreenState extends State<PunchInOutScreen> {
                     try {
                       setState(() => isLoading = true);
                       await punchIn();
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                            content: Text("Punch In Successful")),
-                      );
+                      ScaffoldMessenger.of(context)
+                          .showSnackBar(const SnackBar(content: Text("Punch In Done")));
                     } catch (e) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(e.toString())),
-                      );
+                      ScaffoldMessenger.of(context)
+                          .showSnackBar(SnackBar(content: Text(e.toString())));
                     } finally {
                       setState(() => isLoading = false);
                     }
                   },
                   child: const Text("Punch In"),
                 ),
-                const SizedBox(height: 10),
+
+                const SizedBox(height: 5),
+
+                if (!onBreak)
+                  ElevatedButton(
+                    onPressed: () async {
+                      try {
+                        setState(() => isLoading = true);
+                        await startBreak();
+                        ScaffoldMessenger.of(context)
+                            .showSnackBar(const SnackBar(content: Text("Break Started")));
+                      } catch (e) {
+                        ScaffoldMessenger.of(context)
+                            .showSnackBar(SnackBar(content: Text(e.toString())));
+                      } finally {
+                        setState(() => isLoading = false);
+                      }
+                    },
+                    child: const Text("Start Break"),
+                  ),
+
+                if (onBreak)
+                  ElevatedButton(
+                    onPressed: () async {
+                      try {
+                        setState(() => isLoading = true);
+                        await endBreak();
+                        ScaffoldMessenger.of(context)
+                            .showSnackBar(const SnackBar(content: Text("Break Ended")));
+                      } catch (e) {
+                        ScaffoldMessenger.of(context)
+                            .showSnackBar(SnackBar(content: Text(e.toString())));
+                      } finally {
+                        setState(() => isLoading = false);
+                      }
+                    },
+                    child: const Text("End Break"),
+                  ),
+
                 ElevatedButton(
                   onPressed: () async {
                     try {
                       setState(() => isLoading = true);
                       await punchOut();
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                            content: Text("Punch Out Successful")),
-                      );
+                      ScaffoldMessenger.of(context)
+                          .showSnackBar(const SnackBar(content: Text("Punch Out Done")));
                     } catch (e) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(e.toString())),
-                      );
+                      ScaffoldMessenger.of(context)
+                          .showSnackBar(SnackBar(content: Text(e.toString())));
                     } finally {
                       setState(() => isLoading = false);
                     }
                   },
                   child: const Text("Punch Out"),
                 ),
+
               ],
             ),
           ],
