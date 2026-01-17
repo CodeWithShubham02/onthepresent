@@ -47,6 +47,11 @@ dependencies:
   permission_handler:
   google_maps_flutter:
   url_launcher:
+  excel:
+  path_provider:
+  share_plus:
+  pdf:
+  fl_chart: ^0.66.0
 
 dev_dependencies:
   flutter_test:

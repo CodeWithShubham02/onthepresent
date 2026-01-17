@@ -1,7 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 import 'package:onthepresent/employee/view/pouch_in_out_screen.dart';
+import 'package:onthepresent/employee/view/user_attendance_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../login_screen.dart';
@@ -24,11 +26,14 @@ class EmployeeHomeScreen extends StatefulWidget {
 class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
   Map<String, dynamic>? employeeData;
   bool isLoading = true;
+  DateTime? dateOfJoining;
 
   @override
   void initState() {
     super.initState();
     fetchEmployeeData();
+    //DateTime dateOfjoining = DateTime.parse(employeeData?['doj']);
+    //print(dateOfjoining);
   }
 
   Future<void> fetchEmployeeData() async {
@@ -42,6 +47,12 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
 
       if (doc.exists) {
         employeeData = doc.data();
+        final dojValue = employeeData?['doj'];
+        if (dojValue is Timestamp) {
+          setState(() {
+            dateOfJoining = dojValue.toDate();
+          });
+        }
       }
     } catch (e) {
       debugPrint("Employee fetch error: $e");
@@ -59,7 +70,8 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Employee Dashboard"),
+        title: const Text("Dashboard",style: TextStyle(fontSize: 28),),
+        centerTitle: true,
         actions: [
           IconButton(
             onPressed: () async {
@@ -86,9 +98,9 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
             Expanded(
               child: GridView.count(
                 crossAxisCount: 2,
-                mainAxisSpacing: 16,
-                crossAxisSpacing: 16,
-                childAspectRatio: 1.1,
+                mainAxisSpacing: 10,
+                crossAxisSpacing: 10,
+                childAspectRatio: 1.4,
                 children: [
                   _dashboardBox(
                     title: "Punch In / Punch Out",
@@ -97,10 +109,11 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
                       Get.to(() => PunchInOutScreen(
                         cid: widget.cid,
                         uid: widget.uid,
-                          department:employeeData?['department'] ?? '-',
-                          range:employeeData?['branchRange'] ?? '-',
-                          name:employeeData?['name'] ?? '-',
-
+                        department:employeeData?['department'] ?? '-',
+                        range: double.tryParse(employeeData?['branchRange']?.toString() ?? "0") ?? 0.0,
+// ✅ IMPORTANT
+                        name:employeeData?['name'] ?? '-',
+                        officeName:employeeData?['branchName'] ?? '-',
                       ));
                     },
                   ),
@@ -114,6 +127,16 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
                       ));
                     },
                   ),
+                  (employeeData?['department'] ?? '-') == "Manager"?_dashboardBox(
+                    title: "User Attendance",
+                    icon: Icons.event_available,
+                    onTap: () {
+                      Get.to(() => UserAttendanceScreen(
+                        cid: widget.cid,
+                        officeName:employeeData?['branchName'] ?? '-',
+                      ));
+                    },
+                  ):SizedBox.shrink(),
                 ],
               ),
             ),
@@ -139,6 +162,13 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
             infoRow("Company ID", widget.cid),
             infoRow("Name", employeeData?['name'] ?? '-'),
             infoRow("Department", employeeData?['department'] ?? '-'),
+            infoRow(
+              "Date Of Joining",
+              dateOfJoining == null
+                  ? "-"
+                  : DateFormat('dd MMM yyyy').format(dateOfJoining!),
+            ),
+
             infoRow(
               "Shift",
               employeeData == null

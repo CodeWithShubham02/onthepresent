@@ -19,7 +19,7 @@ class _ShiftScreenState extends State<ShiftScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Shift Screen"),
+        title: const Text("Shift Screen",style: TextStyle(fontSize: 18),),
         actions: [
           IconButton(
             icon: const Icon(Icons.add),

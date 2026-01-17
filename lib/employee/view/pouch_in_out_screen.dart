@@ -10,8 +10,9 @@ class PunchInOutScreen extends StatefulWidget {
   final String cid;
   final String uid;
   final String department;
-  final String range;
+  final double range;
   final String name;
+  final String officeName;
 
   const PunchInOutScreen({
     super.key,
@@ -20,6 +21,7 @@ class PunchInOutScreen extends StatefulWidget {
     required this.department,
     required this.range,
     required this.name,
+    required this.officeName,
   });
 
   @override
@@ -38,14 +40,86 @@ class _PunchInOutScreenState extends State<PunchInOutScreen> {
   TimeOfDay? shiftStart;
   TimeOfDay? shiftEnd;
   late double officeRange;
+  DateTime? dateOfJoining;
   // ---------------- INIT ----------------
   @override
   void initState() {
     super.initState();
     loadLiveLocation();
     loadShiftTime();
-    officeRange = double.tryParse(widget.range) ?? 0;
+    officeRange = widget.range; // ✅ no parsing
+    checkAndAutoMarkAbsent();
   }
+  //-----------------Automatic Attendence----------
+  Future<void> checkAndAutoMarkAbsent() async {
+    final now = DateTime.now();
+
+    // 🟥 1️⃣ Sunday skip
+    if (now.weekday == DateTime.sunday) {
+      debugPrint("Sunday - no absent");
+      return;
+    }
+
+    final empRef = FirebaseFirestore.instance
+        .collection('subcompanies')
+        .doc(widget.cid)
+        .collection('employees')
+        .doc(widget.uid);
+
+    final empDoc = await empRef.get();
+    if (!empDoc.exists) return;
+
+    // 🟥 2️⃣ Date Of Joining check
+    final dojValue = empDoc['doj'];
+    if (dojValue is! Timestamp) return;
+
+    final doj = dojValue.toDate();
+    final dojDate = DateTime(doj.year, doj.month, doj.day);
+
+    if (now.isBefore(dojDate)) {
+      debugPrint("Before DOJ");
+      return;
+    }
+
+    // 🟥 3️⃣ Shift end check
+    final shiftEnd = _timeToToday(empDoc['shiftEnd']);
+    if (now.isBefore(shiftEnd)) {
+      debugPrint("Shift not ended");
+      return;
+    }
+
+    // 🟥 4️⃣ Attendance already exists?
+    final todayId = todayKey();
+
+    final attRef = FirebaseFirestore.instance
+        .collection('subcompanies')
+        .doc(widget.cid)
+        .collection('attendance')
+        .doc(todayId)
+        .collection('records')
+        .doc(widget.uid);
+
+    final attDoc = await attRef.get();
+    if (attDoc.exists) {
+      debugPrint("Attendance already exists");
+      return;
+    }
+
+    // ✅ 5️⃣ AUTO ABSENT
+    await attRef.set({
+      'uid': widget.uid,
+      'name': widget.name,
+      'department': widget.department,
+      'officeName': widget.officeName,
+      'status': 'ABSENT',
+      'autoMarked': true,
+      'reason': 'No Punch In',
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+
+    debugPrint("AUTO ABSENT MARKED");
+  }
+
 
   // ---------------- LOCATION ----------------
   Future<Position> getCurrentLocation() async {
@@ -301,12 +375,14 @@ class _PunchInOutScreenState extends State<PunchInOutScreen> {
       'distance': currentDistance,
       'department': widget.department,
       'name': widget.name,
+      'officeName': widget.officeName,
       'shiftStart': empDoc['shiftStart'],
       'shiftEnd': empDoc['shiftEnd'],
       'punchIn': {
         'time': FieldValue.serverTimestamp(),
         'lat': currentPosition!.latitude,
         'lng': currentPosition!.longitude,
+        'image': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS-8Ne4j_5gRNNikzu_KZRIyzSihAQ74KAbiQ&s',
         'remark': remarkCtrl.text,
       }
     }, SetOptions(merge: true));
@@ -374,6 +450,7 @@ class _PunchInOutScreenState extends State<PunchInOutScreen> {
         'time': FieldValue.serverTimestamp(),
         'lat': currentPosition!.latitude,
         'lng': currentPosition!.longitude,
+        'image':"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS-8Ne4j_5gRNNikzu_KZRIyzSihAQ74KAbiQ&s",
         'remark': remarkCtrl.text,
       },
       'totalBreakMinutes': totalBreakMinutes,
@@ -456,7 +533,7 @@ class _PunchInOutScreenState extends State<PunchInOutScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Punch In / Out")),
+      appBar: AppBar(title: const Text("Punch In / Out",style: TextStyle(fontSize: 18),)),
       body: SingleChildScrollView(
         child: Column(
           children: [

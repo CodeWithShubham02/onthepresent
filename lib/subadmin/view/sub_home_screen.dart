@@ -7,6 +7,7 @@ import 'package:onthepresent/subadmin/view/all_employee_attendance_screen.dart';
 import 'package:onthepresent/subadmin/view/all_employee_list.dart';
 import 'package:onthepresent/subadmin/view/branch_screen.dart';
 import 'package:onthepresent/subadmin/view/create_department_screen.dart';
+import 'package:onthepresent/subadmin/view/report_attendance_screen.dart';
 import 'package:onthepresent/subadmin/view/shift_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -31,7 +32,7 @@ class _SubHomeScreenState extends State<SubHomeScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Dashboard"),
+        title: const Text("Dashboard",style: TextStyle(fontSize: 25),),
         centerTitle: true,
         actions: [
           IconButton(onPressed: (){
@@ -57,9 +58,9 @@ class _SubHomeScreenState extends State<SubHomeScreen> {
             Expanded(
               child: GridView.count(
                 crossAxisCount: 2,
-                mainAxisSpacing: 16,
-                crossAxisSpacing: 16,
-                childAspectRatio: 1.1,
+                mainAxisSpacing: 10,
+                crossAxisSpacing: 10,
+                childAspectRatio: 1.4,
                 children: [
                   _dashboardBox(
                     title: "Create Branch",
@@ -111,11 +112,12 @@ class _SubHomeScreenState extends State<SubHomeScreen> {
                     },
                   ),
                   _dashboardBox(
-                    title: "Feedback",
+                    title: "Report Attendance",
                     icon: Icons.fact_check,
                     onTap: () {
-                      // Navigator.push(...)
+                      Get.to(()=>ReportAttendanceScreen(cid: widget.cid));
                     },
+
                   ),
                 ],
               ),

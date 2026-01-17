@@ -30,7 +30,7 @@ class _BranchScreenState extends State<BranchScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Create Branch")),
+      appBar: AppBar(title: const Text("Create Branch",style: TextStyle(fontSize: 18),)),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Form(

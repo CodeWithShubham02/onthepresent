@@ -65,7 +65,7 @@ class _CreateDepartmentScreenState extends State<CreateDepartmentScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Create Department"),
+        title: const Text("Create Department",style: TextStyle(fontSize: 18),),
         actions: [
           IconButton(
             icon: const Icon(Icons.add),

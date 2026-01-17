@@ -15,7 +15,7 @@ class _AllBranchScreenState extends State<AllBranchScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("All Branches"),
+        title: const Text("All Branches",style: TextStyle(fontSize: 18),),
         centerTitle: true,
       ),
       body: StreamBuilder<List<BranchModel>>(

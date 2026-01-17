@@ -6,10 +6,12 @@ class AttendanceScreen extends StatefulWidget {
   final String cid;
   final String uid;
 
+
   const AttendanceScreen({
     super.key,
     required this.cid,
     required this.uid,
+
   });
 
   @override
@@ -148,7 +150,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                 dividerThickness: 1,
               ),
               child: DataTable(
-                columnSpacing: 40,
+                columnSpacing: 50,
                 columns: const [
                   DataColumn(label: Text("Field")),
                   DataColumn(label: Text("Value")),
@@ -172,10 +174,10 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                   row("Punch Out Image",
                       linkText(attendanceData?['punchOut']?['image'])),
 
-                  row("Latitude",
+                  row("currentLat",
                       Text(attendanceData?['currentLat']?.toString() ?? "-")),
 
-                  row("Longitude",
+                  row("currentLng",
                       Text(attendanceData?['currentLng']?.toString() ?? "-")),
 
                   row("Shift Start",
@@ -198,6 +200,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                   ),
 
                   row("Working Hours", Text(workingHours())),
+                  row("Total break Time", Text(attendanceData?['totalBreakMinutes']?.toString() ?? "-")),
                 ],
               ),
             ),
